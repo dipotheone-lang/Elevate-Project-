@@ -6,6 +6,7 @@ venv/
 *.egg-info/
 
 # Generated build artifacts (regenerable from source)
+outputs/
 UNITED_BROTHERS_ELEVATE_MASTER.xlsx
 *_audit_report.md
 *_daily_digest.md

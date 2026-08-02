@@ -206,14 +206,22 @@ class SiteTracker:
         if m:
             log.lti_count = int(m.group(1))
 
-        # Staff allocations: "Name 8h" or "Name: 8 hrs"
+        # Staff allocations: "Name 8h" / "Name: 8 hrs" / "الاسم ٨ ساعات".
+        # A name is a SINGLE token (letters only, no spaces/punctuation) placed
+        # immediately before an hour figure. This deliberately avoids sweeping up
+        # sentence fragments from free-form prose (the LLM path handles multi-word
+        # names; the regex fallback stays conservative to keep the CEO digest clean).
+        stopwords = {
+            "ppc", "ncr", "oee", "lti", "uptime", "level", "slab", "no", "and",
+            "the", "of", "on", "at", "hrs", "hr", "hours", "reported", "injury",
+            "lost", "time", "minor", "major", "delivery", "plan",
+        }
         for name, hours in re.findall(
-            r"([A-Za-z؀-ۿ][A-Za-z؀-ۿ .'-]{1,40}?)\s*[:=]?\s*(\d{1,2}(?:\.\d)?)\s*(?:h|hr|hrs|hours|ساع\w*)",
+            r"([A-Za-z؀-ۿ]{2,20})\s*[:=]?\s*(\d{1,2}(?:\.\d)?)\s*(?:h|hr|hrs|hours|ساع\w*)\b",
             text, re.IGNORECASE,
         ):
-            nm = name.strip()
-            # Filter out metric labels accidentally captured.
-            if nm.lower() in ("ppc", "ncr", "oee", "lti", "uptime"):
+            nm = name.strip(" .,،:-'")
+            if not nm or nm.lower() in stopwords:
                 continue
             log.staff_allocations.append(StaffAllocation(name=nm, hours=float(hours)))
 

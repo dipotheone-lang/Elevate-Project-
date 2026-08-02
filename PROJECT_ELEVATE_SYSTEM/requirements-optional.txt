@@ -1,0 +1,4 @@
+# Optional — enables the Anthropic AI parsing path in boq_auditor.py and
+# site_tracker.py (model claude-3-7-sonnet-20250219). Without it, both modules
+# fall back to their deterministic regex parsers.
+anthropic>=0.40

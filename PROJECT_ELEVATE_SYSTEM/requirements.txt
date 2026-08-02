@@ -1,6 +1,10 @@
 # PROJECT ELEVATE (Bulletproof Enterprise Edition) — United Brothers Co.
-# Python 3.10+
+# Core runtime dependencies. Python 3.10+
 pandas>=2.0
 openpyxl>=3.1
 tabulate>=0.9          # pretty Markdown tables for DataFrame.to_markdown()
-anthropic>=0.40        # optional — AI parsing (boq_auditor / site_tracker)
+
+# Optional AI parsing (boq_auditor / site_tracker) — install separately:
+#   pip install -r requirements-optional.txt
+# Development / testing:
+#   pip install -r requirements-dev.txt

@@ -28,7 +28,9 @@ Cairo, and the New Administrative Capital.
 | `site_tracker.py` | Daily WhatsApp/voice site log → PPC, NCR, OEE, LTI, staff hours + CEO digest. محرك السجل اليومي |
 | `gainsharing_calculator.py` | Full financial engine — cash gate, 80/20, 70/30, L&D badges, safety gate. محرك المكاسب |
 | `export_excel_template.py` | Branded `UNITED_BROTHERS_ELEVATE_MASTER.xlsx` generator. مولّد قالب إكسل |
+| `run_pipeline.py` | End-to-end A→Z orchestrator running all four stages. المنسّق الكامل |
 | `target_rates.json` | Master target-rate & governance schema. مخطط الأسعار والحوكمة |
+| `tests/` | Pytest suite (45 tests) covering governance rules & I/O. مجموعة الاختبارات |
 
 ---
 
@@ -38,11 +40,15 @@ Cairo, and the New Administrative Capital.
 # 1) Python 3.10+ virtual environment
 python3 -m venv .venv && source .venv/bin/activate
 
-# 2) Install dependencies
+# 2) Install core dependencies
 pip install -r requirements.txt
 
 # 3) (Optional) enable AI parsing for BOQ & site notes
-export ANTHROPIC_API_KEY="sk-ant-..."   # uses claude-3-7-sonnet-20250219
+pip install -r requirements-optional.txt          # anthropic SDK
+export ANTHROPIC_API_KEY="sk-ant-..."             # uses claude-3-7-sonnet-20250219
+
+# 4) (Dev) install test tooling
+pip install -r requirements-dev.txt               # + pytest
 ```
 
 > Without `ANTHROPIC_API_KEY`, `boq_auditor.py` and `site_tracker.py`
@@ -54,6 +60,9 @@ export ANTHROPIC_API_KEY="sk-ant-..."   # uses claude-3-7-sonnet-20250219
 ## ▶️ Usage
 
 ```bash
+# Run the WHOLE pipeline A → Z (BOQ → Site → Gainsharing → live workbook)
+python3 run_pipeline.py            # writes everything into ./outputs/
+
 # BOQ / quote audit → Markdown report
 python3 boq_auditor.py --quote quote.txt --supplier "ACME Supplies" \
         --project "Suez Plant" --out boq_audit_report.md
@@ -92,6 +101,21 @@ python3 export_excel_template.py --live --out UNITED_BROTHERS_ELEVATE_MASTER.xls
 # item_code | description | unit | qty | unit_rate_egp | approved_vo
 CIV-CONC-C30 | Ready-mix concrete C30 | m3 | 250 | 2600 | no
 ```
+
+Ready-to-run examples live in `sample_inputs/` (`supplier_quote.txt`, `site_notes.json`).
+
+---
+
+## ✅ Testing & CI
+
+```bash
+pip install -r requirements-dev.txt
+python3 -m pytest tests/ -v        # 45 tests: governance rules, BOQ, site, Excel, pipeline
+```
+
+Every push and pull request to `main` runs the suite on Python 3.10/3.11/3.12
+via GitHub Actions (`.github/workflows/ci.yml`), plus a smoke run of the full
+pipeline.
 
 ---
 

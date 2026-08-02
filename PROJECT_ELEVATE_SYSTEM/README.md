@@ -7,6 +7,10 @@ Cairo, and the New Administrative Capital.
 
 نظام المشاركة في المكاسب وتطوير الكفاءات وأتمتة العمليات — النسخة المؤسسية المحصنة.
 
+> 📖 **New here? Read the full A→Z walkthrough:** [`docs/HOW_IT_WORKS.md`](docs/HOW_IT_WORKS.md)
+> — data flow, the period lifecycle, every governance formula with a worked
+> example, and how to run each part.
+
 ---
 
 ## 🎨 Corporate Theme

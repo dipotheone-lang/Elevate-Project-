@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Generated build artifacts (regenerable from source)
+UNITED_BROTHERS_ELEVATE_MASTER.xlsx
+*_audit_report.md
+*_daily_digest.md
+boq_audit_report.md
+site_daily_digest.md
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

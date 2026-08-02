@@ -1,0 +1,8 @@
+# United Brothers Co. — Supplier Quote (raw)
+# item_code | description | unit | qty | unit_rate_egp | approved_vo
+CIV-CONC-C30 | Ready-mix concrete C30/37 supply & pour | m3 | 320 | 2600 | no
+CIV-STEEL-REBAR | High-tensile reinforcement steel | ton | 45 | 47000 | no
+MEP-CABLE-CU-4C | 4-core XLPE copper power cable | m | 900 | 720 | no
+MEP-HVAC-FCU | Fan coil unit supply & install | unit | 12 | 18200 | yes
+GEN-EARTH-EXC | Bulk earthworks excavation & disposal | m3 | 2000 | 175 | yes
+SPECIAL-CRANE | Mobile crane hire 90 days | ls | 1 | 850000 | no

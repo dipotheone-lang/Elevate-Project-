@@ -72,12 +72,75 @@ ENTITY_AR = "الشركة المتحدة إخوان (للمقاولات والت
 
 # --------------------------------------------------------------------------- #
 class ElevateWorkbookBuilder:
-    def __init__(self, rates_path: str | Path = DEFAULT_RATES_PATH) -> None:
+    def __init__(
+        self,
+        rates_path: str | Path = DEFAULT_RATES_PATH,
+        gainsharing_result: Any = None,
+    ) -> None:
+        """
+        rates_path: path to target_rates.json.
+        gainsharing_result: optional GainsharingResult from
+            gainsharing_calculator.GainsharingCalculator.run(). When provided,
+            the Gainsharing and Pool sheets are seeded with the real computed
+            figures; otherwise illustrative demo rows are used. Live Excel
+            formulas are preserved in both cases so the workbook stays
+            self-recalculating and audit-ready.
+        """
         self.rates_path = Path(rates_path)
         self.config = self._load_config(self.rates_path)
         self.gov = self.config["governance"]
+        self.result = gainsharing_result
         self.wb = Workbook()
         self._register_styles()
+
+    # ------------------------------------------------------------------ #
+    #  Data-source helpers  |  مصادر البيانات
+    # ------------------------------------------------------------------ #
+    def _gainsharing_rows(self) -> list[dict[str, Any]]:
+        """Uniform per-member rows for the Gainsharing sheet (live or demo)."""
+        if self.result is not None:
+            rows: list[dict[str, Any]] = []
+            for _, r in self.result.distribution_df.iterrows():
+                rows.append({
+                    "name": r.get("name", ""),
+                    "role": r.get("role", ""),
+                    "badge": r.get("ld_badge", "Level 1"),
+                    "mult": float(r.get("badge_multiplier", 1.0)),
+                    "tw": float(r.get("time_weight", 1.0)),
+                    "ppc": float(r.get("ppc", 0.0)),
+                    "sla": 1 if r.get("section_sla_met", True) else 0,
+                    "ld": 1 if r.get("ld_sla_met", True) else 0,
+                    "base": float(r.get("base_share_egp", 0.0)),
+                    "perf": float(r.get("perf_share_egp", 0.0)),
+                })
+            return rows
+        # Illustrative demo rows (base/perf left at 0 for manual entry).
+        demo = [
+            ("Ahmed Fathy", "Site Manager", "Level 3", 1.35, 1.0, 0.92, 1, 1),
+            ("Mona Adel", "QA/QC Engineer", "Level 2", 1.20, 0.8, 0.88, 1, 0),
+            ("Khaled Samir", "Foreman", "Level 1", 1.00, 1.0, 0.70, 1, 1),
+            ("Sara Nabil", "Planner", "Level 2", 1.20, 0.5, 0.90, 1, 1),
+        ]
+        return [
+            {"name": n, "role": ro, "badge": b, "mult": mu, "tw": tw,
+             "ppc": p, "sla": s, "ld": l, "base": 0.0, "perf": 0.0}
+            for (n, ro, b, mu, tw, p, s, l) in demo
+        ]
+
+    def _pool_seed(self) -> dict[str, float]:
+        """Input seed values for the Pool & Cash Gate sheet (live or demo)."""
+        if self.result is not None:
+            p = self.result.pool_df.iloc[0]
+            return {
+                "baseline": float(p["baseline_egp"]),
+                "delta": float(p["escalation_delta"]),
+                "actual": float(p["actual_egp"]),
+                "qf": float(p["quality_factor"]),
+                "bad_debt": float(p["bad_debt_egp"]),
+                "cash": float(p["cash_collected_pct"]),
+            }
+        return {"baseline": 12_000_000, "delta": 0.08, "actual": 10_400_000,
+                "qf": 0.95, "bad_debt": 150_000, "cash": 0.82}
 
     @staticmethod
     def _load_config(path: Path) -> dict[str, Any]:
@@ -180,32 +243,29 @@ class ElevateWorkbookBuilder:
                                   "توزيع المشاركة في المكاسب", span=len(headers))
         self._write_headers(ws, start, headers)
 
-        # Sample rows (demonstrate live formulas). Replace via calculator output.
-        sample = [
-            ("Ahmed Fathy", "Site Manager", "Level 3", 1.35, 1.0, 0.92, 1, 1),
-            ("Mona Adel", "QA/QC Engineer", "Level 2", 1.20, 0.8, 0.88, 1, 0),
-            ("Khaled Samir", "Foreman", "Level 1", 1.00, 1.0, 0.70, 1, 1),
-            ("Sara Nabil", "Planner", "Level 2", 1.20, 0.5, 0.90, 1, 1),
-        ]
+        # Rows come from a live GainsharingResult when provided, else demo rows.
+        # Live figures seed Base/Perf; the rest stays formula-driven so the
+        # workbook recalculates in Excel and remains audit-ready.
+        rows = self._gainsharing_rows()
         ppc_gate = float(self.gov["ppc_eligibility_threshold"])
         immediate = float(self.gov["immediate_payout_pct"])
         retained = float(self.gov["retained_cushion_pct"])
 
         first = start + 1
-        for i, (name, role, badge, mult, tw, ppc, sla, ld) in enumerate(sample):
+        for i, m in enumerate(rows):
             r = first + i
-            ws.cell(row=r, column=1, value=name).border = BORDER
-            ws.cell(row=r, column=2, value=role).border = BORDER
-            ws.cell(row=r, column=3, value=badge).border = BORDER
-            ws.cell(row=r, column=4, value=mult).border = BORDER
-            ws.cell(row=r, column=5, value=tw).border = BORDER
-            c_ppc = ws.cell(row=r, column=6, value=ppc); c_ppc.style = "ub_pct"
-            ws.cell(row=r, column=7, value=sla).border = BORDER
-            ws.cell(row=r, column=8, value=ld).border = BORDER
+            ws.cell(row=r, column=1, value=m["name"]).border = BORDER
+            ws.cell(row=r, column=2, value=m["role"]).border = BORDER
+            ws.cell(row=r, column=3, value=m["badge"]).border = BORDER
+            ws.cell(row=r, column=4, value=m["mult"]).border = BORDER
+            ws.cell(row=r, column=5, value=m["tw"]).border = BORDER
+            c_ppc = ws.cell(row=r, column=6, value=m["ppc"]); c_ppc.style = "ub_pct"
+            ws.cell(row=r, column=7, value=m["sla"]).border = BORDER
+            ws.cell(row=r, column=8, value=m["ld"]).border = BORDER
 
-            # Base share placeholders (input by calculator or manual).
-            base = ws.cell(row=r, column=9, value=0); base.style = "ub_money"
-            perf = ws.cell(row=r, column=10, value=0); perf.style = "ub_money"
+            # Base / Perf shares — seeded from the engine (0 in demo mode).
+            base = ws.cell(row=r, column=9, value=m["base"]); base.style = "ub_money"
+            perf = ws.cell(row=r, column=10, value=m["perf"]); perf.style = "ub_money"
 
             # Gross = Base + Perf  (live SUM formula)
             gross = ws.cell(row=r, column=11,
@@ -229,7 +289,7 @@ class ElevateWorkbookBuilder:
             status.border = BORDER
             status.alignment = Alignment(horizontal="center", vertical="center")
 
-        last = first + len(sample) - 1
+        last = first + len(rows) - 1
 
         # Totals row (Gold accent + SUM / COUNTA).
         tr = last + 1
@@ -303,20 +363,21 @@ class ElevateWorkbookBuilder:
             r += 1
             return cur
 
-        row_base = put("Baseline Cost / التكلفة الأساسية", 12_000_000, "C_baseline", money=True)
-        row_delta = put("Escalation Δ / مؤشر التصاعد", 0.08, "Material index", pct=True)
+        seed = self._pool_seed()
+        row_base = put("Baseline Cost / التكلفة الأساسية", seed["baseline"], "C_baseline", money=True)
+        row_delta = put("Escalation Δ / مؤشر التصاعد", seed["delta"], "Material index", pct=True)
         row_adj = put("Adjusted Baseline / الأساس المعدل",
                       f"=B{row_base}*(1+B{row_delta})", "C_baseline*(1+Δ)", money=True)
-        row_actual = put("Actual Cost / التكلفة الفعلية", 10_400_000, "C_actual", money=True)
-        row_qf = put("Quality Factor / معامل الجودة", 0.95, "F_quality 0-1", pct=True)
-        row_bd = put("Bad Debt / الديون المعدومة", 150_000, "Isolated", money=True)
+        row_actual = put("Actual Cost / التكلفة الفعلية", seed["actual"], "C_actual", money=True)
+        row_qf = put("Quality Factor / معامل الجودة", seed["qf"], "F_quality 0-1", pct=True)
+        row_bd = put("Bad Debt / الديون المعدومة", seed["bad_debt"], "Isolated", money=True)
         row_s = put("Net Savings S / صافي الوفورات",
                     f"=MAX(0,(B{row_adj}-B{row_actual}-B{row_bd}))*B{row_qf}",
                     "S = MAX(0, adj-actual-baddebt)*F_q", money=True)
         team_pct = float(self.gov["team_shared_pool_pct"])
         row_pool = put("Team Pool 35% / مجمع الفريق",
                        f"=B{row_s}*{team_pct}", "P_pool = S*0.35", money=True)
-        row_cash = put("Cash Collected % / نسبة التحصيل", 0.82, "Cash gate input", pct=True)
+        row_cash = put("Cash Collected % / نسبة التحصيل", seed["cash"], "Cash gate input", pct=True)
 
         full = float(self.config["cash_gate"]["full_unlock_threshold"])
         floor = float(self.config["cash_gate"]["partial_unlock_floor"])
@@ -569,17 +630,53 @@ class ElevateWorkbookBuilder:
         return out
 
 
+def _demo_gainsharing_result(rates_path: str | Path):
+    """Run the gainsharing engine on the demo scenario and return its result.
+
+    Imported lazily so this module still builds a blank template even if
+    gainsharing_calculator's dependencies are unavailable.
+    """
+    from gainsharing_calculator import (
+        GainsharingCalculator, ProjectFinancials, TeamMember,
+    )
+
+    calc = GainsharingCalculator(rates_path=rates_path)
+    fin = ProjectFinancials(
+        project_name="Ain Sokhna Industrial Warehouse",
+        baseline_cost_egp=12_000_000.0, actual_cost_egp=10_400_000.0,
+        cash_collected_pct=0.82, quality_factor=0.95,
+        escalation_commodity="steel_rebar", bad_debt_egp=150_000.0,
+        subcontractor_value_egp=3_000_000.0, lost_time_injuries=0,
+    )
+    members = [
+        TeamMember("Ahmed Fathy", "Site Manager", time_weight=1.0, ld_badge="Level 3",
+                   ppc=0.92, equipment_oee=0.97, vo_settlement_days=5,
+                   value_engineering_savings_egp=200_000),
+        TeamMember("Mona Adel", "QA/QC Engineer", time_weight=0.8, ld_badge="Level 2",
+                   ppc=0.88, ld_sla_met=False),
+        TeamMember("Khaled Samir", "Foreman", time_weight=1.0, ld_badge="Level 1", ppc=0.70),
+        TeamMember("Sara Nabil", "Planner", time_weight=0.5, ld_badge="Level 2",
+                   ppc=0.90, resigning_clean_handover=True, kaizen_points=2),
+    ]
+    return calc.run(fin, members)
+
+
 def _main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(description="United Brothers Co. Excel Template Generator")
     parser.add_argument("--rates", type=str, default=str(DEFAULT_RATES_PATH))
     parser.add_argument("--out", type=str, default=OUTPUT_FILE)
+    parser.add_argument("--live", action="store_true",
+                        help="Seed the Gainsharing & Pool sheets from a live "
+                             "gainsharing_calculator run instead of demo rows.")
     args = parser.parse_args()
 
-    builder = ElevateWorkbookBuilder(rates_path=args.rates)
+    result = _demo_gainsharing_result(args.rates) if args.live else None
+    builder = ElevateWorkbookBuilder(rates_path=args.rates, gainsharing_result=result)
     path = builder.build(args.out)
-    print(f"✅ Workbook generated: {path.resolve()}")
+    mode = "LIVE (engine-seeded)" if args.live else "TEMPLATE (demo rows)"
+    print(f"✅ Workbook generated [{mode}]: {path.resolve()}")
 
 
 if __name__ == "__main__":

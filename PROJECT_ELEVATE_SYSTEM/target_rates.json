@@ -1,0 +1,122 @@
+{
+  "_meta": {
+    "schema_version": "1.0.0",
+    "entity_en": "United Brothers Co.",
+    "entity_ar": "الشركة المتحدة إخوان (للمقاولات والتوريدات العمومية والخدمات الصناعية)",
+    "currency": "EGP",
+    "last_updated": "2026-08-02",
+    "regions": ["Suez", "Ain Sokhna", "Greater Cairo", "New Administrative Capital"],
+    "description_en": "Master target-rate and governance schema for PROJECT ELEVATE (Bulletproof Enterprise Edition).",
+    "description_ar": "مخطط الأسعار المستهدفة والحوكمة الرئيسي لمشروع إيليفيت (النسخة المؤسسية المحصنة)."
+  },
+
+  "governance": {
+    "team_shared_pool_pct": 0.35,
+    "company_retention_pct": 0.65,
+    "base_equal_pool_pct": 0.80,
+    "performance_pool_pct": 0.20,
+    "immediate_payout_pct": 0.70,
+    "retained_cushion_pct": 0.30,
+    "subcontractor_backcharge_reserve_pct": 0.10,
+    "unapproved_scope_threshold_egp": 10000.0,
+    "unapproved_scope_penalty_pct": 0.50,
+    "ppc_eligibility_threshold": 0.85,
+    "oee_uptime_threshold": 0.95,
+    "fast_track_vo_days": 7,
+    "value_engineering_reward_pct": 0.10,
+    "ld_forfeit_pct": 0.50
+  },
+
+  "cash_gate": {
+    "full_unlock_threshold": 0.85,
+    "partial_unlock_floor": 0.75,
+    "holdback_below": 0.75,
+    "prorata_denominator": 0.85,
+    "description_en": "Cash liquidity gate controlling team pool unlock.",
+    "description_ar": "بوابة السيولة النقدية للتحكم في فتح مجمع الفريق."
+  },
+
+  "quality_factor": {
+    "default": 1.0,
+    "min": 0.0,
+    "max": 1.0,
+    "description_en": "F_quality multiplier applied to gross savings (0.0 - 1.0).",
+    "description_ar": "معامل الجودة المطبق على إجمالي الوفورات."
+  },
+
+  "ld_badges": {
+    "Level 1": { "multiplier": 1.0, "label_ar": "المستوى الأول" },
+    "Level 2": { "multiplier": 1.2, "label_ar": "المستوى الثاني" },
+    "Level 3": { "multiplier": 1.35, "label_ar": "المستوى الثالث" }
+  },
+
+  "safety": {
+    "max_lti_allowed": 0,
+    "description_en": "Zero Lost Time Injury tolerance gate. Any major incident disqualifies the site team.",
+    "description_ar": "بوابة عدم التسامح مع إصابات الوقت الضائع. أي حادث كبير يستبعد فريق الموقع."
+  },
+
+  "material_escalation_index": {
+    "steel_rebar": 0.08,
+    "cement": 0.05,
+    "diesel_fuel": 0.12,
+    "aggregates": 0.04,
+    "electrical_copper": 0.15,
+    "default": 0.06,
+    "description_en": "Delta material escalation index per commodity (fractional, added to baseline).",
+    "description_ar": "مؤشر تصاعد المواد لكل سلعة."
+  },
+
+  "target_rates": [
+    {
+      "item_code": "CIV-CONC-C30",
+      "description_en": "Ready-mix concrete C30/37 supply & pour",
+      "description_ar": "توريد وصب خرسانة جاهزة",
+      "unit": "m3",
+      "target_rate_egp": 2450.0,
+      "category": "civil",
+      "commodity": "cement",
+      "ve_potential": true
+    },
+    {
+      "item_code": "CIV-STEEL-REBAR",
+      "description_en": "High-tensile reinforcement steel, cut & bent",
+      "description_ar": "حديد تسليح عالي المقاومة، قص وثني",
+      "unit": "ton",
+      "target_rate_egp": 48500.0,
+      "category": "civil",
+      "commodity": "steel_rebar",
+      "ve_potential": true
+    },
+    {
+      "item_code": "MEP-CABLE-CU-4C",
+      "description_en": "4-core XLPE copper power cable, supply & install",
+      "description_ar": "كابل نحاس رباعي، توريد وتركيب",
+      "unit": "m",
+      "target_rate_egp": 620.0,
+      "category": "electrical",
+      "commodity": "electrical_copper",
+      "ve_potential": true
+    },
+    {
+      "item_code": "MEP-HVAC-FCU",
+      "description_en": "Fan coil unit supply, install & commission",
+      "description_ar": "توريد وتركيب وتشغيل وحدة ملف مروحي",
+      "unit": "unit",
+      "target_rate_egp": 18700.0,
+      "category": "mechanical",
+      "commodity": "default",
+      "ve_potential": false
+    },
+    {
+      "item_code": "GEN-EARTH-EXC",
+      "description_en": "Bulk earthworks excavation & disposal",
+      "description_ar": "أعمال حفر ونقل مخلفات",
+      "unit": "m3",
+      "target_rate_egp": 185.0,
+      "category": "earthworks",
+      "commodity": "diesel_fuel",
+      "ve_potential": true
+    }
+  ]
+}

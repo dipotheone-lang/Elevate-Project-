@@ -65,9 +65,20 @@ python3 site_tracker.py --notes notes.json --period "2026-08-02" \
 # Gainsharing engine (demo / library)
 python3 gainsharing_calculator.py
 
-# Branded master workbook
+# Branded master workbook — blank template (editable demo rows)
 python3 export_excel_template.py --out UNITED_BROTHERS_ELEVATE_MASTER.xlsx
+
+# Branded master workbook — LIVE: Gainsharing & Pool sheets seeded from a real
+# gainsharing_calculator run (formulas preserved, so it still recalculates)
+python3 export_excel_template.py --live --out UNITED_BROTHERS_ELEVATE_MASTER.xlsx
 ```
+
+> **Live workbook seeding.** `ElevateWorkbookBuilder(gainsharing_result=...)`
+> accepts a `GainsharingResult` from the engine and seeds the Gainsharing
+> (Base/Perf shares, SLA & L&D flags) and Pool & Cash Gate (baseline, Δ,
+> actual, F_quality, bad debt, cash %) sheets with real figures. All
+> derived cells stay formula-driven (`SUM`/`IF`/`AND`), so the workbook
+> self-recalculates and reconciles line items to totals to the cent.
 
 ### `notes.json` shape (site_tracker)
 ```json

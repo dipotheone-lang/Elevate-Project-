@@ -13,6 +13,23 @@ Cairo, and the New Administrative Capital.
 
 ---
 
+## 🚀 Quick Start (one command)
+
+After [installing Python 3.10+](https://python.org/downloads) and downloading
+this repo, open a terminal in the `PROJECT_ELEVATE_SYSTEM` folder and run:
+
+| Platform | Run everything | Run the tests |
+|---|---|---|
+| **Mac / Linux** | `./run.sh` | `./run.sh test` |
+| **Windows** | double-click `run.bat` (or `run.bat`) | `run.bat test` |
+
+The launcher creates the virtual environment, installs dependencies, and runs
+the full pipeline — results land in `./outputs/` (open
+`UNITED_BROTHERS_ELEVATE_MASTER.xlsx` in Excel). Everything below is the manual
+equivalent.
+
+---
+
 ## 🎨 Corporate Theme
 | Token | Value | Use |
 |---|---|---|

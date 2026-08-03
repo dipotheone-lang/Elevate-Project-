@@ -1,4 +1,5 @@
 # Development & testing dependencies.
 -r requirements.txt
 pytest>=7.0
-streamlit>=1.40    # for the dashboard AppTest smoke tests
+streamlit>=1.40
+plotly>=5.24

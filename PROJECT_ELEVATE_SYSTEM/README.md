@@ -30,6 +30,26 @@ equivalent.
 
 ---
 
+## 🖥️ Interactive Dashboard
+
+A visual, no-code web dashboard (`dashboard.py`, Streamlit): enter the
+financials and team, upload a quote & site notes, click **Run**, and see the
+KPIs, charts, and download buttons — no terminal.
+
+```bash
+# Local
+# Windows: double-click dashboard.bat     Mac/Linux: ./dashboard.sh
+# or:
+pip install -r requirements-dashboard.txt
+streamlit run dashboard.py                # opens http://localhost:8501
+```
+
+**Put it online (free, shareable link):** deploy on Streamlit Community Cloud —
+see [`docs/DEPLOY.md`](docs/DEPLOY.md). Point it at `main` /
+`PROJECT_ELEVATE_SYSTEM/dashboard.py` and you get a public URL for your team.
+
+---
+
 ## 🎨 Corporate Theme
 | Token | Value | Use |
 |---|---|---|

@@ -1,0 +1,3 @@
+# Run the dashboard locally:  streamlit run dashboard.py
+-r requirements.txt
+streamlit>=1.40

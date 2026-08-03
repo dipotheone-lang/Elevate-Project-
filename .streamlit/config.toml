@@ -1,0 +1,10 @@
+# United Brothers Co. — PROJECT ELEVATE dashboard theme
+[theme]
+primaryColor = "#D4AF37"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F6F9"
+textColor = "#1B365D"
+font = "sans serif"
+
+[server]
+headless = true

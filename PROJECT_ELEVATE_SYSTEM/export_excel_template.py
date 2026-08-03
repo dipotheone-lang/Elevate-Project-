@@ -3,7 +3,7 @@
 """
 export_excel_template.py
 ========================
-United Brothers Co. / الشركة المتحدة إخوان
+United Brothers Co. / الاخوة المتحدين للمقاولات
 PROJECT ELEVATE (Bulletproof Enterprise Edition)
 
 Branded Excel Generator
@@ -67,7 +67,7 @@ THIN = Side(style="thin", color="B0B0B0")
 BORDER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
 
 ENTITY_EN = "United Brothers Co."
-ENTITY_AR = "الشركة المتحدة إخوان (للمقاولات والتوريدات العمومية والخدمات الصناعية)"
+ENTITY_AR = "الاخوة المتحدين للمقاولات"
 
 
 # --------------------------------------------------------------------------- #

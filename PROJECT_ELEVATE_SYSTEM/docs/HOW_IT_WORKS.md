@@ -1,5 +1,5 @@
 # PROJECT ELEVATE — How It Works (A → Z)
-### United Brothers Co. / الشركة المتحدة إخوان (للمقاولات والتوريدات العمومية والخدمات الصناعية)
+### United Brothers Co. / الاخوة المتحدين للمقاولات
 
 A complete, plain-language walkthrough of the PROJECT ELEVATE
 (Bulletproof Enterprise Edition) system — what it does, how data flows through

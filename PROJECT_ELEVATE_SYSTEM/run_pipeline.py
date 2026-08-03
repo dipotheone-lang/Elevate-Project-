@@ -3,7 +3,7 @@
 """
 run_pipeline.py
 ===============
-United Brothers Co. / الشركة المتحدة إخوان
+United Brothers Co. / الاخوة المتحدين للمقاولات
 PROJECT ELEVATE (Bulletproof Enterprise Edition)
 
 End-to-End Orchestrator (A → Z)

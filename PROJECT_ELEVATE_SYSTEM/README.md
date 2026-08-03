@@ -1,5 +1,5 @@
 # PROJECT ELEVATE — Bulletproof Enterprise Edition
-### United Brothers Co. / الشركة المتحدة إخوان (للمقاولات والتوريدات العمومية والخدمات الصناعية)
+### United Brothers Co. / الاخوة المتحدين للمقاولات
 
 Internal **80/20 Gainsharing, Individual KPI / L&D Development, and Operational
 Automation System** for United Brothers Co. — serving Suez, Ain Sokhna, Greater

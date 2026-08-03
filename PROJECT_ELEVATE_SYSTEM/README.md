@@ -1,5 +1,5 @@
 # PROJECT ELEVATE — Bulletproof Enterprise Edition
-### United Brothers Co. / الشركة المتحدة إخوان (للمقاولات والتوريدات العمومية والخدمات الصناعية)
+### United Brothers Co. / الاخوة المتحدين للمقاولات
 
 Internal **80/20 Gainsharing, Individual KPI / L&D Development, and Operational
 Automation System** for United Brothers Co. — serving Suez, Ain Sokhna, Greater
@@ -27,6 +27,26 @@ The launcher creates the virtual environment, installs dependencies, and runs
 the full pipeline — results land in `./outputs/` (open
 `UNITED_BROTHERS_ELEVATE_MASTER.xlsx` in Excel). Everything below is the manual
 equivalent.
+
+---
+
+## 🖥️ Interactive Dashboard
+
+A visual, no-code web dashboard (`dashboard.py`, Streamlit): enter the
+financials and team, upload a quote & site notes, click **Run**, and see the
+KPIs, charts, and download buttons — no terminal.
+
+```bash
+# Local
+# Windows: double-click dashboard.bat     Mac/Linux: ./dashboard.sh
+# or:
+pip install -r requirements-dashboard.txt
+streamlit run dashboard.py                # opens http://localhost:8501
+```
+
+**Put it online (free, shareable link):** deploy on Streamlit Community Cloud —
+see [`docs/DEPLOY.md`](docs/DEPLOY.md). Point it at `main` /
+`PROJECT_ELEVATE_SYSTEM/dashboard.py` and you get a public URL for your team.
 
 ---
 

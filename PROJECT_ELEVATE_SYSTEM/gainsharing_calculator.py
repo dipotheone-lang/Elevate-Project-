@@ -3,7 +3,7 @@
 """
 gainsharing_calculator.py
 =========================
-United Brothers Co. / الشركة المتحدة إخوان
+United Brothers Co. / الاخوة المتحدين للمقاولات
 PROJECT ELEVATE (Bulletproof Enterprise Edition)
 
 Adaptive Gainsharing & Dispute Resolution Engine

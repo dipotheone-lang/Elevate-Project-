@@ -1,0 +1,6 @@
+# Deployment requirements for the PROJECT ELEVATE dashboard (Streamlit Cloud).
+# Streamlit Community Cloud installs from this repo-root file.
+streamlit>=1.40
+pandas>=2.0
+openpyxl>=3.1
+tabulate>=0.9

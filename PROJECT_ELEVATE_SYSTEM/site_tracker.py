@@ -3,7 +3,7 @@
 """
 site_tracker.py
 ===============
-United Brothers Co. / الشركة المتحدة إخوان
+United Brothers Co. / الاخوة المتحدين للمقاولات
 PROJECT ELEVATE (Bulletproof Enterprise Edition)
 
 Daily Site Voice/Text Log & PPC Engine
@@ -47,7 +47,7 @@ ANTHROPIC_MODEL = "claude-3-7-sonnet-20250219"
 
 BRAND = {
     "entity_en": "United Brothers Co.",
-    "entity_ar": "الشركة المتحدة إخوان (للمقاولات والتوريدات العمومية والخدمات الصناعية)",
+    "entity_ar": "الاخوة المتحدين للمقاولات",
     "navy": "#1B365D",
     "gold": "#D4AF37",
 }

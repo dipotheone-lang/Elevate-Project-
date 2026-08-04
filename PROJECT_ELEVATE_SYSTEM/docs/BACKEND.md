@@ -29,16 +29,35 @@ closed on top of it.
   **queues an escalation** (owner + channel from the rate schedule).
 - `escalation_queue(pk)` / `mark_escalation_sent(id)`.
 
-**Configuration** — point `ELEVATE_DB` at a durable path:
-```bash
-export ELEVATE_DB=/data/elevate.db      # default: ./elevate.db (gitignored)
-```
+### Two interchangeable backends
+The store picks its backend at connect time from configuration — the read/write
+API is identical either way.
 
-> ⚠️ **Streamlit Community Cloud** filesystems are ephemeral — the SQLite file
-> resets on each redeploy, so closed periods there last only until the next
-> deploy. For durable persistence, run locally / self-hosted with `ELEVATE_DB`
-> on a mounted volume, or swap the store for a managed Postgres (the API is the
-> same shape). The schema is production-ready either way.
+| Backend | When | Config | Durable on Streamlit Cloud? |
+|---|---|---|---|
+| **SQLite** | default, zero-config | `ELEVATE_DB` (default `./elevate.db`, gitignored) | ❌ ephemeral FS resets each redeploy |
+| **Postgres / Supabase** | set a connection URL | `ELEVATE_DATABASE_URL` (or `DATABASE_URL`) | ✅ survives redeploys |
+
+```bash
+# Local / self-hosted SQLite on a mounted volume
+export ELEVATE_DB=/data/elevate.db
+
+# Durable managed Postgres / Supabase (survives Cloud redeploys)
+export ELEVATE_DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DBNAME"
+```
+On **Streamlit Community Cloud** put the URL in **secrets** (`ELEVATE_DATABASE_URL`
+under *App → Settings → Secrets*), not in the repo. Use Supabase's **pooled**
+(pgBouncer, port 6543) connection string for serverless-style redeploys.
+
+The SQL is written once and adapted per backend (placeholders `?`→`%s`,
+`INSERT OR REPLACE`→`ON CONFLICT … DO UPDATE`, `AUTOINCREMENT`→`BIGSERIAL`,
+money columns `REAL`→`DOUBLE PRECISION`). `psycopg` is imported **only** when a
+Postgres URL is present, so the SQLite path stays dependency-free. First connect
+seeds the authored history into whichever backend is empty.
+
+> ✅ Verified: with `ELEVATE_DATABASE_URL` set, a closed period and its queued
+> escalation survive a fresh connection (the redeploy scenario). See the live
+> round-trip test below.
 
 ---
 
@@ -120,7 +139,15 @@ address on file is reported as `skipped`/`error` so misconfiguration is visible.
 precedence, unlock forecast, `safety_unreconciled` / `reconcile_safety`, and the
 close→persist→queue→sent flow (10 tests). `tests/test_escalation_sender.py` —
 composition, dry-run defaults, mocked SMTP + WhatsApp send / skip / error paths,
-and store wiring (12 tests). Full suite: **69 passing**.
+and store wiring (12 tests). `tests/test_store_backends.py` — backend selection,
+placeholder translation, per-backend DDL / upsert SQL, plus an **opt-in live
+Postgres round-trip** (10 tests + 1 skipped). Full suite: **79 passing**.
+
+Run the live Postgres test against any real database (e.g. Supabase):
+```bash
+export ELEVATE_PG_TEST_URL="postgresql://USER:PASSWORD@HOST:5432/DBNAME"
+pytest tests/test_store_backends.py::test_live_postgres_roundtrip
+```
 
 ---
 

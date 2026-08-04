@@ -42,6 +42,8 @@ from gainsharing_calculator import (  # noqa: E402
 )
 from export_excel_template import ElevateWorkbookBuilder  # noqa: E402
 import portfolio_data as P  # noqa: E402
+import portfolio_store as store  # noqa: E402
+from gainsharing_calculator import safety_unreconciled  # noqa: E402
 
 RATES_PATH = HERE / "target_rates.json"
 SAMPLE_QUOTE = HERE / "sample_inputs" / "supplier_quote.txt"
@@ -176,8 +178,8 @@ dist = gs.distribution_df
 site_agg = RES["site"]["aggregate"]
 audited = RES["boq"]["audited"]
 
-proj = P.get_project(ss["proj"])
-per_row = P.get_period_row(ss["proj"], ss["per"])
+proj = store.project(ss["proj"])
+per_row = store.period_row(ss["proj"], ss["per"])
 LIVE = ss["proj"] == "p1" and ss["per"] == "jul"
 role = ss["role"]
 scope_portfolio = role == "exec"
@@ -204,8 +206,9 @@ st.markdown(f"""
 # Interactive control row (Streamlit widgets styled to sit under the bar).
 tb = st.columns([3, 2.4, 2, 1.4, 1.1, 1.1])
 with tb[0]:
-    proj_names = {p["id"]: P.get_project(p["id"])[("name" if EN else "nameAr")] for p in P.PROJECTS}
-    sel = st.selectbox(T("Project", "المشروع"), list(proj_names), index=[p["id"] for p in P.PROJECTS].index(ss["proj"]),
+    PROJ_LIST = store.projects()
+    proj_names = {p["id"]: p[("name" if EN else "nameAr")] for p in PROJ_LIST}
+    sel = st.selectbox(T("Project", "المشروع"), list(proj_names), index=[p["id"] for p in PROJ_LIST].index(ss["proj"]),
                        format_func=lambda k: proj_names[k], label_visibility="collapsed",
                        disabled=not scope_portfolio)
     if sel != ss["proj"]:
@@ -265,7 +268,7 @@ def card(html: str) -> str:
 
 # LTI reconciliation (the defect the design surfaced).
 site_lti = site_agg["total_lti"]
-lti_unreconciled = LIVE and site_lti > 0 and not gs.safety_disqualified
+lti_unreconciled = LIVE and safety_unreconciled(0, site_lti) and not gs.safety_disqualified
 
 # --------------------------------------------------------------------------- #
 #  Top-risk + gate strips (live, exec/mgr)
@@ -313,7 +316,7 @@ tab = dict(zip(tab_keys, tabs))
 # ============================ PORTFOLIO ==================================== #
 if "pf" in tab:
     with tab["pf"]:
-        tot = P.portfolio_totals(ss["per"])
+        tot = store.portfolio_totals(ss["per"])
         # Hero + blocked-by-cause
         blocked_rows_html = ""
         for br in tot["blocked_rows"]:
@@ -325,7 +328,7 @@ if "pf" in tab:
               <span class="mono" style="font-size:15px;font-weight:600;color:{c['c']};width:96px">{money(br['row']['b'])}</span>
               <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
                 <span style="font-size:11px;font-weight:600;color:{c['c']}">{c[('en' if EN else 'ar')]}</span>
-                <span style="font-size:12.5px;font-weight:600;color:{P.NAVY};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{P.get_project(br['project']['id'])[('name' if EN else 'nameAr')]}</span></span>
+                <span style="font-size:12.5px;font-weight:600;color:{P.NAVY};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{br['project'][('name' if EN else 'nameAr')]}</span></span>
               <span style="text-align:end;flex:none">
                 <div style="font-size:12px;font-weight:600;color:{P.NAVY}">{c[('owner' if EN else 'ownerAr')]} · {c[('due' if EN else 'dueAr')]}</div>
                 <div class="mono" style="font-size:11px;color:{P.MUTED2}">{unlock} · {pts}</div></span></div>"""
@@ -353,8 +356,8 @@ if "pf" in tab:
 
         # Project table with sparklines
         rows = ""
-        for p in P.PROJECTS:
-            r = P.get_period_row(p["id"], ss["per"])
+        for p in store.projects():
+            r = store.period_row(p["id"], ss["per"])
             v = P.VERDICTS[r["v"]]
             dtxt, dcol = P.delta_vs_prior(p, ss["per"], ss["lang"])
             spark = P.spark_points(p)
@@ -364,8 +367,8 @@ if "pf" in tab:
             rows += f"""<div style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-top:1px solid #EDF1F6;
               border-inline-start:3px solid {P.NAVY if sel else 'transparent'};background:{'#F6F8FB' if sel else '#fff'}">
               <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
-                <span style="font-size:13.5px;font-weight:600;color:{P.NAVY}">{P.get_project(p['id'])[('name' if EN else 'nameAr')]}</span>
-                <span style="font-size:11.5px;color:{P.MUTED2}">{p['code']} · {P.get_project(p['id'])[('region' if EN else 'regionAr')]}</span></span>
+                <span style="font-size:13.5px;font-weight:600;color:{P.NAVY}">{p[('name' if EN else 'nameAr')]}</span>
+                <span style="font-size:11.5px;color:{P.MUTED2}">{p['code']} · {p[('region' if EN else 'regionAr')]}</span></span>
               <span style="width:130px;flex:none">{chip(r['v'])}</span>
               <span style="width:150px;flex:none">
                 <span class="mono" style="font-size:13.5px;font-weight:600;color:{P.NAVY}">{money(r['r'])}</span>
@@ -386,7 +389,7 @@ if "pf" in tab:
         # Period history matrix
         head = "".join(f'<span style="width:108px;flex:none;font-size:10.5px;font-weight:600;letter-spacing:.9px;color:{P.GOLD2 if pk["k"]=="aug" else P.MUTED};text-transform:uppercase;padding-inline-start:11px">{pk[("en" if EN else "ar")]}</span>' for pk in P.PERIODS)
         matrix = ""
-        for p in P.PROJECTS:
+        for p in store.projects():
             cells = ""
             for x in p["periods"]:
                 d = P.VERDICTS[x["v"]]
@@ -397,7 +400,7 @@ if "pf" in tab:
                   <span style="font-size:9.5px;font-weight:600;color:{d['c']};text-transform:uppercase;letter-spacing:.5px">{d[('s' if EN else 'sa')]}</span></span>"""
             matrix += f"""<div style="display:flex;align-items:stretch;gap:9px;margin-bottom:8px">
               <span style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px;padding-inline-end:10px">
-                <span style="font-size:12.5px;font-weight:600;color:{P.NAVY}">{P.get_project(p['id'])[('name' if EN else 'nameAr')]}</span>
+                <span style="font-size:12.5px;font-weight:600;color:{P.NAVY}">{p[('name' if EN else 'nameAr')]}</span>
                 <span style="font-size:11px;color:{P.MUTED2}">{T('handover','التسليم')} {P.HANDOVER[p['id']][('en' if EN else 'ar')]}</span></span>{cells}</div>"""
         st.markdown(f"""<div style="background:#fff;border:1px solid {P.BORDER};border-radius:14px;overflow:hidden" dir="{DIR}">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid {P.BORDER}">
@@ -406,6 +409,30 @@ if "pf" in tab:
           <div style="padding:14px 18px 18px">
             <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px"><span style="flex:1"></span>{head}</div>
             {matrix}</div></div>""", unsafe_allow_html=True)
+
+        # Escalation queue (persisted on period close)
+        queue = store.escalation_queue(ss["per"])
+        if queue:
+            qrows = ""
+            for e in queue:
+                c = P.CAUSE.get(e["cause"], {})
+                stcol, stf = ((P.GREEN, P.GREEN_FILL) if e["status"] == "sent" else (P.AMBER, P.AMBER_FILL))
+                qrows += f"""<div style="display:flex;align-items:center;gap:13px;padding:11px 16px;border-top:1px solid #EDF1F6">
+                  <span class="mono" style="width:96px;font-weight:600;color:{P.BRICK}">{money(e['amount'])}</span>
+                  <span style="flex:1;font-size:12.5px;font-weight:600;color:{P.NAVY}">{c.get(('en' if EN else 'ar'), e['cause'])}</span>
+                  <span style="font-size:12px;color:{P.MUTED}">{e['owner']} · {e['channel']} · {T('due','قبل')} {e['due']}</span>
+                  <span style="font-size:10.5px;font-weight:600;color:{stcol};background:{stf};border-radius:5px;padding:3px 8px">{T('sent','مُرسل') if e['status']=='sent' else T('queued','في الطابور')}</span></div>"""
+            st.markdown(f"""<div style="background:#fff;border:1px solid {P.BORDER};border-radius:14px;overflow:hidden;margin-top:18px" dir="{DIR}">
+              <div style="padding:13px 18px;border-bottom:1px solid {P.BORDER};display:flex;align-items:baseline;gap:10px">
+                <h2 style="margin:0;font-size:14px;font-weight:600;color:{P.NAVY}">{T("Escalation queue","طابور التصعيد")}</h2>
+                <span style="font-size:11.5px;color:{P.MUTED2}">{T("fired on period close · owner &amp; SLA from the rate schedule","تُطلق عند إغلاق الفترة · المسؤول والمدة من جدول الأسعار")}</span></div>{qrows}</div>""",
+                        unsafe_allow_html=True)
+            if role in ("exec", "mgr") and any(e["status"] == "queued" for e in queue):
+                if st.button(T("Mark all queued as sent", "وضع علامة مُرسل على الكل")):
+                    for e in queue:
+                        if e["status"] == "queued":
+                            store.mark_escalation_sent(e["id"])
+                    st.rerun()
 
 
 # ============================ EXECUTIVE ==================================== #
@@ -416,7 +443,7 @@ if "exec" in tab:
             st.markdown(f"""<div style="max-width:880px" dir="{DIR}">{card(f'''
               <div style="display:flex;align-items:center;gap:14px;padding:18px 22px;background:#F6F8FB;border-bottom:1px solid {P.BORDER}">
                 <div style="flex:1"><div style="font-size:10.5px;font-weight:600;letter-spacing:1.2px;color:{P.MUTED2};text-transform:uppercase;margin-bottom:4px">{T("Closed period summary","ملخص فترة مغلقة")}</div>
-                  <div style="font-size:17px;font-weight:600;color:{P.NAVY}">{P.get_project(proj['id'])[('name' if EN else 'nameAr')]}</div>
+                  <div style="font-size:17px;font-weight:600;color:{P.NAVY}">{proj[('name' if EN else 'nameAr')]}</div>
                   <div style="font-size:12px;color:{P.MUTED2};margin-top:3px">{proj['code']} · {P.period_label(ss['per'], ss['lang'])}</div></div>
                 {chip(per_row['v'], big=True)}</div>
               <div style="display:grid;grid-template-columns:repeat(4,1fr)">
@@ -435,6 +462,18 @@ if "exec" in tab:
               <span style="font-size:13px;color:#8A5A20;flex:1">{T(f"Cash gate at {pool['unlock_ratio']:.1%} · {money(pool['immediate_70_egp'])} EGP released, {money(pool['team_pool_raw_egp']-pool['unlocked_pool_egp'])} EGP locked",
                                                                     f"بوابة التحصيل {pool['unlock_ratio']:.1%} · صرف {money(pool['immediate_70_egp'])} وحجز {money(pool['team_pool_raw_egp']-pool['unlocked_pool_egp'])} جنيه")}</span></div>""",
                         unsafe_allow_html=True)
+            # Close & persist this period (exec/mgr) — writes the immutable summary row.
+            if role in ("exec", "mgr"):
+                cca, ccb = st.columns([1, 3])
+                with cca:
+                    if st.button(T("🔒 Close & persist period", "🔒 إغلاق وحفظ الفترة")):
+                        store.close_period(ss["proj"], ss["per"], gs_result=gs, site_agg=site_agg,
+                                           workbook_path="UNITED_BROTHERS_ELEVATE_MASTER.xlsx")
+                        st.session_state["_closed_msg"] = True
+                        st.rerun()
+                if st.session_state.get("_closed_msg"):
+                    ccb.success(T("Period persisted to the store (immutable) and any escalation queued — see the Portfolio tab.",
+                                  "حُفظت الفترة في المخزن (غير قابلة للتعديل) وأُدرج التصعيد — انظر تبويب المحفظة."))
             # Hero cascade (layout A)
             held = pool["team_pool_raw_egp"] - pool["unlocked_pool_egp"]
             st.markdown(f"""<div style="display:flex;gap:14px;margin-bottom:14px" dir="{DIR}">

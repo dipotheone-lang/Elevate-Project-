@@ -17,3 +17,7 @@ site_daily_digest.md
 .DS_Store
 .idea/
 .vscode/
+
+# runtime SQLite store (seeded from portfolio_data)
+elevate.db
+*.db

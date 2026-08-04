@@ -152,6 +152,17 @@
         "sla_days": 30
       }
     },
+    "escalation_contacts": {
+      "_note": "Owner -> delivery address for real escalation sending. Transport credentials (SMTP_*, WHATSAPP_*) come from environment / Streamlit secrets, never from this file. Empty channel value skips that channel.",
+      "HSE Manager": {
+        "email": "elevate@ubcsis.com",
+        "whatsapp": ""
+      },
+      "Commercial": {
+        "email": "elevate@ubcsis.com",
+        "whatsapp": ""
+      }
+    },
     "handover_dates": {
       "p1": "2027-03-01",
       "p2": "2026-11-01",

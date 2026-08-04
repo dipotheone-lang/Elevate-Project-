@@ -1,5 +1,5 @@
 # Development & testing dependencies.
 -r requirements.txt
 pytest>=7.0
-streamlit>=1.40
+streamlit>=1.42
 plotly>=5.24

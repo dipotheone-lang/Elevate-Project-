@@ -416,22 +416,42 @@ if "pf" in tab:
             qrows = ""
             for e in queue:
                 c = P.CAUSE.get(e["cause"], {})
-                stcol, stf = ((P.GREEN, P.GREEN_FILL) if e["status"] == "sent" else (P.AMBER, P.AMBER_FILL))
+                _stmap = {"sent": (P.GREEN, P.GREEN_FILL), "error": (P.BRICK, P.BRICK_FILL)}
+                stcol, stf = _stmap.get(e["status"], (P.AMBER, P.AMBER_FILL))
+                _stlabel = {"sent": T("sent", "مُرسل"), "error": T("failed", "فشل")}.get(
+                    e["status"], T("queued", "في الطابور"))
                 qrows += f"""<div style="display:flex;align-items:center;gap:13px;padding:11px 16px;border-top:1px solid #EDF1F6">
                   <span class="mono" style="width:96px;font-weight:600;color:{P.BRICK}">{money(e['amount'])}</span>
                   <span style="flex:1;font-size:12.5px;font-weight:600;color:{P.NAVY}">{c.get(('en' if EN else 'ar'), e['cause'])}</span>
                   <span style="font-size:12px;color:{P.MUTED}">{e['owner']} · {e['channel']} · {T('due','قبل')} {e['due']}</span>
-                  <span style="font-size:10.5px;font-weight:600;color:{stcol};background:{stf};border-radius:5px;padding:3px 8px">{T('sent','مُرسل') if e['status']=='sent' else T('queued','في الطابور')}</span></div>"""
+                  <span style="font-size:10.5px;font-weight:600;color:{stcol};background:{stf};border-radius:5px;padding:3px 8px">{_stlabel}</span></div>"""
             st.markdown(f"""<div style="background:#fff;border:1px solid {P.BORDER};border-radius:14px;overflow:hidden;margin-top:18px" dir="{DIR}">
               <div style="padding:13px 18px;border-bottom:1px solid {P.BORDER};display:flex;align-items:baseline;gap:10px">
                 <h2 style="margin:0;font-size:14px;font-weight:600;color:{P.NAVY}">{T("Escalation queue","طابور التصعيد")}</h2>
                 <span style="font-size:11.5px;color:{P.MUTED2}">{T("fired on period close · owner &amp; SLA from the rate schedule","تُطلق عند إغلاق الفترة · المسؤول والمدة من جدول الأسعار")}</span></div>{qrows}</div>""",
                         unsafe_allow_html=True)
             if role in ("exec", "mgr") and any(e["status"] == "queued" for e in queue):
-                if st.button(T("Mark all queued as sent", "وضع علامة مُرسل على الكل")):
-                    for e in queue:
-                        if e["status"] == "queued":
-                            store.mark_escalation_sent(e["id"])
+                import escalation_sender as _sender
+                _live = _sender.is_configured()
+                st.caption(T(
+                    "Live sending — SMTP / WhatsApp credentials detected." if _live
+                    else "Dry-run — no SMTP / WhatsApp credentials configured; sends are simulated. "
+                         "Set SMTP_* / WHATSAPP_* in the environment or Streamlit secrets to go live.",
+                    "إرسال فعلي — تم اكتشاف بيانات الاعتماد." if _live
+                    else "وضع تجريبي — لا توجد بيانات اعتماد؛ الإرسال محاكى. اضبط المتغيرات لتفعيل الإرسال."))
+                if st.button(T("Send queued escalations", "إرسال التصعيدات في الطابور")):
+                    results = store.send_queued(ss["per"])
+                    ok = sum(1 for r in results if r.get("status") in ("sent", "simulated"))
+                    bad = [r for r in results if r.get("status") not in ("sent", "simulated")]
+                    if bad:
+                        st.warning(T(
+                            f"{ok} sent · {len(bad)} failed — "
+                            + "; ".join(f"{r.get('channel')}: {r.get('detail')}" for r in bad),
+                            f"{ok} أُرسلت · {len(bad)} فشلت"))
+                    else:
+                        st.success(T(
+                            f"{ok} escalation(s) {'sent' if _live else 'simulated (dry-run)'}.",
+                            f"تمت معالجة {ok} تصعيد."))
                     st.rerun()
 
 

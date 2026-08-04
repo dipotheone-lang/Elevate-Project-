@@ -63,9 +63,13 @@ CREATE TABLE IF NOT EXISTS escalations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id TEXT, period_key TEXT,
     cause TEXT, owner TEXT, channel TEXT,
-    amount REAL, due TEXT, status TEXT, created_at TEXT
+    amount REAL, due TEXT, status TEXT, created_at TEXT,
+    send_detail TEXT, sent_at TEXT
 );
 """
+
+# Columns added after the first schema shipped; applied to pre-existing DBs.
+_MIGRATIONS = {"escalations": ["send_detail TEXT", "sent_at TEXT"]}
 
 
 # --------------------------------------------------------------------------- #
@@ -77,10 +81,20 @@ def _connect() -> sqlite3.Connection:
         _CONN = sqlite3.connect(str(DB_PATH), check_same_thread=False)
         _CONN.row_factory = sqlite3.Row
         _CONN.executescript(SCHEMA)
+        _migrate(_CONN)
         _CONN.commit()
         if not _CONN.execute("SELECT 1 FROM projects LIMIT 1").fetchone():
             _seed(_CONN)
     return _CONN
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Add columns introduced after the initial schema to a pre-existing DB."""
+    for table, cols in _MIGRATIONS.items():
+        have = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+        for coldef in cols:
+            if coldef.split()[0] not in have:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {coldef}")
 
 
 def _seed(conn: sqlite3.Connection) -> None:
@@ -239,8 +253,46 @@ def escalation_queue(pk: str | None = None) -> list[dict]:
     return [dict(r) for r in conn.execute(q, args).fetchall()]
 
 
-def mark_escalation_sent(esc_id: int) -> None:
+def send_escalation(esc_id: int, sender=None) -> dict:
+    """Actually deliver a queued escalation (email / WhatsApp) and record the
+    outcome. Delegates transport to ``escalation_sender.send`` (overridable via
+    ``sender`` for tests). When the channel is unconfigured the sender runs in
+    simulated dry-run mode, so this is always safe offline / in CI.
+
+    Status mapping: ``sent``/``simulated`` → ``'sent'``; ``skipped``/``error`` →
+    ``'error'`` (surfaced in the queue so misconfiguration is visible). The
+    provider detail is stored alongside for audit.
+    Returns the sender's result dict."""
+    if sender is None:
+        import escalation_sender  # local import: keeps the store importable
+        sender = escalation_sender.send  # even if the sender module is absent
+
     conn = _connect()
+    r = conn.execute("SELECT * FROM escalations WHERE id=?", (esc_id,)).fetchone()
+    if r is None:
+        return {"status": "error", "detail": f"no escalation id={esc_id}"}
+
+    result = sender(dict(r))
+    status = "sent" if result.get("status") in ("sent", "simulated") else "error"
+    detail = f"{result.get('status')}: {result.get('detail', '')}".strip()
+    ts = datetime.now(timezone.utc).isoformat()
     with _LOCK:
-        conn.execute("UPDATE escalations SET status='sent' WHERE id=?", (esc_id,))
+        conn.execute("UPDATE escalations SET status=?, send_detail=?, sent_at=? WHERE id=?",
+                     (status, detail, ts, esc_id))
         conn.commit()
+    return result
+
+
+def mark_escalation_sent(esc_id: int) -> dict:
+    """Backward-compatible alias — sends the escalation for real (dry-run when
+    the channel is unconfigured) and returns the sender result."""
+    return send_escalation(esc_id)
+
+
+def send_queued(pk: str | None = None, sender=None) -> list[dict]:
+    """Send every still-queued escalation for a period. Returns per-row results."""
+    out = []
+    for e in escalation_queue(pk):
+        if e["status"] == "queued":
+            out.append(send_escalation(e["id"], sender=sender))
+    return out

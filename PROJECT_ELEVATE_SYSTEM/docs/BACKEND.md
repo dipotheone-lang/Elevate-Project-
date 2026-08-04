@@ -67,22 +67,60 @@ Lives in `target_rates.json → portfolio_governance` (and mirrored in
 
 ---
 
+---
+
+## `escalation_sender.py` — real delivery (§5.2)
+Turns a queued escalation into an actual notification:
+
+- **email** → SMTP (stdlib `smtplib` / `email`)
+- **whatsapp** → WhatsApp Business Cloud API (Meta Graph API, stdlib `urllib`)
+
+`send(row)` dispatches on the row's `channel` and always returns a result dict
+`{channel, to, status, detail}` — it never raises. `store.send_escalation(id)`
+calls it and records the outcome (`status` → `sent` / `error`, plus the provider
+detail and a timestamp); `store.send_queued(pk)` sends every still-queued row.
+
+**Safe by default (dry-run).** With no credentials the sender runs in
+**simulated** mode — it composes the message but does *not* touch the network,
+so CI, offline runs and the public demo never send. The identical code path goes
+live the instant credentials are present. No new dependencies (stdlib only).
+
+**Credentials — from env / Streamlit secrets, never the repo:**
+```bash
+# Email (SMTP)
+export SMTP_HOST=smtp.example.com SMTP_PORT=587
+export SMTP_USER=... SMTP_PASSWORD=... SMTP_FROM="elevate@yourco.com"
+export SMTP_STARTTLS=true          # default
+# WhatsApp Business Cloud API
+export WHATSAPP_TOKEN=...          # Meta Graph API token
+export WHATSAPP_PHONE_ID=...       # sender phone-number id
+export WHATSAPP_API_VERSION=v21.0  # default
+```
+**Recipients** (owner → address) live in `portfolio_data.ESCALATION_CONTACTS`
+(mirrored in `target_rates.json → portfolio_governance.escalation_contacts`).
+An empty channel value simply skips that channel; a configured channel with no
+address on file is reported as `skipped`/`error` so misconfiguration is visible.
+
+---
+
 ## In the dashboard
 - **Portfolio** reads projects / totals / period matrix from the **store**, and
-  shows the **escalation queue** (with a "mark all queued as sent" action).
+  shows the **escalation queue** with a **Send queued escalations** action. A
+  caption tells the operator whether sending is *live* (credentials detected) or
+  *dry-run*; failures surface inline (queue row shows **failed** in brick red).
 - **Executive** (Exec/PM) gains **🔒 Close & persist period**, which writes the
   immutable summary and queues escalations.
 
 ## Still open (real integrations)
-- **Escalation sending** logs to the queue; wiring an actual WhatsApp Business /
-  SMTP sender is the remaining integration.
 - **Roles** come from a selector (demo); production should derive role from the
   auth layer with server-side row filtering (PORT_GUIDE §5.1).
 
 ## Tests
 `tests/test_backend.py` — seeding, reads, `portfolio_totals`, blocking-cause
 precedence, unlock forecast, `safety_unreconciled` / `reconcile_safety`, and the
-close→persist→queue→sent flow (10 tests). Full suite: **57 passing**.
+close→persist→queue→sent flow (10 tests). `tests/test_escalation_sender.py` —
+composition, dry-run defaults, mocked SMTP + WhatsApp send / skip / error paths,
+and store wiring (12 tests). Full suite: **69 passing**.
 
 ---
 

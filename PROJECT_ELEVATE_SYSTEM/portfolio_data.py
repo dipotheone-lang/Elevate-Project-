@@ -96,6 +96,16 @@ ESCALATION_OWNERS = {
     "gate":   {"owner": "Commercial", "channels": ["email"], "sla_days": 30},
 }
 
+# Owner → delivery address for real escalation sending (escalation_sender.py).
+# Placeholders on purpose — edit here (or mirror in target_rates.json) with the
+# real distribution inbox / WhatsApp number. Empty values simply skip that
+# channel; credentials for the transport itself come from env / Streamlit
+# secrets, never from this file.
+ESCALATION_CONTACTS = {
+    "HSE Manager": {"email": "hse@unitedbrothers.example",       "whatsapp": ""},
+    "Commercial":  {"email": "commercial@unitedbrothers.example", "whatsapp": ""},
+}
+
 # Per-(project, period) history. r=released(immediate 70%), c=cash%, p=avg PPC,
 # b=blocked EGP, cs=blocking cause, s=net savings. Ain Sokhna/jul is the live one.
 PROJECTS = [

@@ -160,7 +160,7 @@ def _send_email(row: dict) -> dict:
     port = int(_secret("SMTP_PORT") or 587)
     user = _secret("SMTP_USER")
     password = _secret("SMTP_PASSWORD")
-    sender = _secret("SMTP_FROM") or user or "elevate@unitedbrothers.example"
+    sender = _secret("SMTP_FROM") or user or "elevate@ubcsis.com"
 
     msg = EmailMessage()
     msg["Subject"] = subject

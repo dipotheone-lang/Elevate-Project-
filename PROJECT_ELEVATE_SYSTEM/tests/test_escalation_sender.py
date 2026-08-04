@@ -103,7 +103,7 @@ def test_email_sent_when_configured(monkeypatch):
     assert sender.is_configured("email") is True
     r = sender.send(_row(channel="email", owner="Commercial"))
     assert r["status"] == "sent"
-    assert r["to"] == "commercial@unitedbrothers.example"
+    assert r["to"] == "elevate@ubcsis.com"
     srv = _FakeSMTP.instances[-1]
     assert srv.started_tls and srv.logged_in == ("u", "p") and len(srv.sent) == 1
 

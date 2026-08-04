@@ -102,8 +102,8 @@ ESCALATION_OWNERS = {
 # channel; credentials for the transport itself come from env / Streamlit
 # secrets, never from this file.
 ESCALATION_CONTACTS = {
-    "HSE Manager": {"email": "hse@unitedbrothers.example",       "whatsapp": ""},
-    "Commercial":  {"email": "commercial@unitedbrothers.example", "whatsapp": ""},
+    "HSE Manager": {"email": "elevate@ubcsis.com", "whatsapp": ""},
+    "Commercial":  {"email": "elevate@ubcsis.com", "whatsapp": ""},
 }
 
 # Per-(project, period) history. r=released(immediate 70%), c=cash%, p=avg PPC,

@@ -5,28 +5,31 @@
     "entity_ar": "الاخوة المتحدين للمقاولات",
     "currency": "EGP",
     "last_updated": "2026-08-02",
-    "regions": ["Suez", "Ain Sokhna", "Greater Cairo", "New Administrative Capital"],
+    "regions": [
+      "Suez",
+      "Ain Sokhna",
+      "Greater Cairo",
+      "New Administrative Capital"
+    ],
     "description_en": "Master target-rate and governance schema for PROJECT ELEVATE (Bulletproof Enterprise Edition).",
     "description_ar": "مخطط الأسعار المستهدفة والحوكمة الرئيسي لمشروع إيليفيت (النسخة المؤسسية المحصنة)."
   },
-
   "governance": {
     "team_shared_pool_pct": 0.35,
     "company_retention_pct": 0.65,
-    "base_equal_pool_pct": 0.80,
-    "performance_pool_pct": 0.20,
-    "immediate_payout_pct": 0.70,
-    "retained_cushion_pct": 0.30,
-    "subcontractor_backcharge_reserve_pct": 0.10,
+    "base_equal_pool_pct": 0.8,
+    "performance_pool_pct": 0.2,
+    "immediate_payout_pct": 0.7,
+    "retained_cushion_pct": 0.3,
+    "subcontractor_backcharge_reserve_pct": 0.1,
     "unapproved_scope_threshold_egp": 10000.0,
-    "unapproved_scope_penalty_pct": 0.50,
+    "unapproved_scope_penalty_pct": 0.5,
     "ppc_eligibility_threshold": 0.85,
     "oee_uptime_threshold": 0.95,
     "fast_track_vo_days": 7,
-    "value_engineering_reward_pct": 0.10,
-    "ld_forfeit_pct": 0.50
+    "value_engineering_reward_pct": 0.1,
+    "ld_forfeit_pct": 0.5
   },
-
   "cash_gate": {
     "full_unlock_threshold": 0.85,
     "partial_unlock_floor": 0.75,
@@ -35,7 +38,6 @@
     "description_en": "Cash liquidity gate controlling team pool unlock.",
     "description_ar": "بوابة السيولة النقدية للتحكم في فتح مجمع الفريق."
   },
-
   "quality_factor": {
     "default": 1.0,
     "min": 0.0,
@@ -43,19 +45,25 @@
     "description_en": "F_quality multiplier applied to gross savings (0.0 - 1.0).",
     "description_ar": "معامل الجودة المطبق على إجمالي الوفورات."
   },
-
   "ld_badges": {
-    "Level 1": { "multiplier": 1.0, "label_ar": "المستوى الأول" },
-    "Level 2": { "multiplier": 1.2, "label_ar": "المستوى الثاني" },
-    "Level 3": { "multiplier": 1.35, "label_ar": "المستوى الثالث" }
+    "Level 1": {
+      "multiplier": 1.0,
+      "label_ar": "المستوى الأول"
+    },
+    "Level 2": {
+      "multiplier": 1.2,
+      "label_ar": "المستوى الثاني"
+    },
+    "Level 3": {
+      "multiplier": 1.35,
+      "label_ar": "المستوى الثالث"
+    }
   },
-
   "safety": {
     "max_lti_allowed": 0,
     "description_en": "Zero Lost Time Injury tolerance gate. Any major incident disqualifies the site team.",
     "description_ar": "بوابة عدم التسامح مع إصابات الوقت الضائع. أي حادث كبير يستبعد فريق الموقع."
   },
-
   "material_escalation_index": {
     "steel_rebar": 0.08,
     "cement": 0.05,
@@ -66,7 +74,6 @@
     "description_en": "Delta material escalation index per commodity (fractional, added to baseline).",
     "description_ar": "مؤشر تصاعد المواد لكل سلعة."
   },
-
   "target_rates": [
     {
       "item_code": "CIV-CONC-C30",
@@ -118,5 +125,39 @@
       "commodity": "diesel_fuel",
       "ve_potential": true
     }
-  ]
+  ],
+  "portfolio_governance": {
+    "_note": "Escalation owners/SLA and per-project handover dates. Consumed by the dashboard + portfolio_store; the gainsharing engine ignores this block.",
+    "escalation_owners": {
+      "safety": {
+        "owner": "HSE Manager",
+        "channels": [
+          "whatsapp",
+          "email"
+        ],
+        "sla_days": 5
+      },
+      "cash": {
+        "owner": "Commercial",
+        "channels": [
+          "email"
+        ],
+        "sla_days": 30
+      },
+      "gate": {
+        "owner": "Commercial",
+        "channels": [
+          "email"
+        ],
+        "sla_days": 30
+      }
+    },
+    "handover_dates": {
+      "p1": "2027-03-01",
+      "p2": "2026-11-01",
+      "p3": "2027-06-01",
+      "p4": "2026-09-01"
+    },
+    "concentration_cap_pct": 0.4
+  }
 }

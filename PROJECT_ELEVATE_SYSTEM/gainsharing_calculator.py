@@ -539,6 +539,28 @@ class GainsharingResult:
 
 
 # --------------------------------------------------------------------------- #
+#  Safety reconciliation (PORT_GUIDE §7) — the highest-value guardrail.
+#  فحص مطابقة السلامة
+# --------------------------------------------------------------------------- #
+def safety_unreconciled(declared_lti: int, site_lti: int) -> bool:
+    """True when the daily site log reports more Lost Time Injuries than the
+    financial safety-gate input was told about. When True the payout was
+    computed as if the site were safe while the log says otherwise — a
+    confirmed LTI voids the whole team pool, so this must block sign-off."""
+    return int(site_lti) > int(declared_lti)
+
+
+def reconcile_safety(fin: "ProjectFinancials", site_aggregate: dict) -> Optional[dict]:
+    """Return a SAFETY_UNRECONCILED warning dict, or None if the site log and the
+    declared LTI count agree. Pure — safe to call from the pipeline or the UI."""
+    site_lti = int(site_aggregate.get("total_lti", 0))
+    if safety_unreconciled(fin.lost_time_injuries, site_lti):
+        return {"code": "SAFETY_UNRECONCILED",
+                "declared_lti": int(fin.lost_time_injuries), "site_lti": site_lti}
+    return None
+
+
+# --------------------------------------------------------------------------- #
 #  Self-test / demo  |  عرض توضيحي
 # --------------------------------------------------------------------------- #
 def _demo() -> None:

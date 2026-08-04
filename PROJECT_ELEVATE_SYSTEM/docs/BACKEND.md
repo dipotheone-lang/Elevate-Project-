@@ -122,6 +122,39 @@ address on file is reported as `skipped`/`error` so misconfiguration is visible.
 
 ---
 
+## `auth.py` — login + server-side roles (§5.1)
+Turns the demo **role selector** into a real identity boundary using Streamlit's
+built-in **OIDC** login (`st.login` / `st.user` / `st.logout`, Streamlit ≥ 1.42) —
+works with any provider (Google Workspace, Microsoft Entra, Auth0, Okta).
+
+- When an `[auth]` section is configured the app **requires sign-in** and derives
+  the viewer's role **from their authenticated email** (`role_for(email)`), so the
+  role can no longer be self-selected. Tab scoping (`ROLE_TABS`) becomes genuine
+  server-side access control. Unmapped users fall back to the **least-privilege**
+  `member` role.
+- **Safe by default.** With no `[auth]` section, `auth.enabled()` is `False` and
+  the app runs in demo mode with the role selector — local runs, the public demo
+  and CI smoke tests work with zero config (same posture as the sender / store).
+
+**Configuration — Streamlit secrets, never the repo:**
+```toml
+[auth]
+redirect_uri = "https://your-app.streamlit.app/oauth2callback"
+cookie_secret = "a-long-random-string"
+client_id = "…"
+client_secret = "…"
+server_metadata_url = "https://accounts.google.com/.well-known/openid-configuration"
+default_role = "member"
+
+[roles]                       # email -> exec | mgr | member
+"ceo@ubcsis.com" = "exec"
+"pm.sokhna@ubcsis.com" = "mgr"
+```
+In the top bar an authenticated session shows an **identity chip** (name · role)
+and a **Sign out** button instead of the role dropdown.
+
+---
+
 ## In the dashboard
 - **Portfolio** reads projects / totals / period matrix from the **store**, and
   shows the **escalation queue** with a **Send queued escalations** action. A
@@ -129,10 +162,8 @@ address on file is reported as `skipped`/`error` so misconfiguration is visible.
   *dry-run*; failures surface inline (queue row shows **failed** in brick red).
 - **Executive** (Exec/PM) gains **🔒 Close & persist period**, which writes the
   immutable summary and queues escalations.
-
-## Still open (real integrations)
-- **Roles** come from a selector (demo); production should derive role from the
-  auth layer with server-side row filtering (PORT_GUIDE §5.1).
+- **Role** comes from the authenticated identity when OIDC is configured (demo
+  selector otherwise).
 
 ## Tests
 `tests/test_backend.py` — seeding, reads, `portfolio_totals`, blocking-cause
@@ -141,7 +172,9 @@ close→persist→queue→sent flow (10 tests). `tests/test_escalation_sender.py
 composition, dry-run defaults, mocked SMTP + WhatsApp send / skip / error paths,
 and store wiring (12 tests). `tests/test_store_backends.py` — backend selection,
 placeholder translation, per-backend DDL / upsert SQL, plus an **opt-in live
-Postgres round-trip** (10 tests + 1 skipped). Full suite: **79 passing**.
+Postgres round-trip** (10 tests + 1 skipped). `tests/test_auth.py` — role
+derivation, case-insensitivity, least-privilege fallback, invalid-role rejection
+(7 tests). Full suite: **86 passing**.
 
 Run the live Postgres test against any real database (e.g. Supabase):
 ```bash

@@ -43,6 +43,7 @@ from gainsharing_calculator import (  # noqa: E402
 from export_excel_template import ElevateWorkbookBuilder  # noqa: E402
 import portfolio_data as P  # noqa: E402
 import portfolio_store as store  # noqa: E402
+import auth  # noqa: E402
 from gainsharing_calculator import safety_unreconciled  # noqa: E402
 
 RATES_PATH = HERE / "target_rates.json"
@@ -146,6 +147,32 @@ def run_engine() -> dict:
 
 
 # --------------------------------------------------------------------------- #
+#  AUTH GATE (optional OIDC). When no [auth] secrets are set this is a no-op and
+#  the app runs in demo mode with the role selector; the smoke test's first
+#  button therefore stays "Open the console".
+# --------------------------------------------------------------------------- #
+if auth.enabled() and not auth.is_logged_in():
+    st.markdown(f"""
+    <div style="min-height:74vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      background:{P.NAVY_DEEP};margin:-1px -1px 0;border-bottom:3px solid {P.GOLD}" dir="{DIR}">
+      <div style="width:96px;height:96px;border-radius:22px;background:{P.CREAM};display:flex;align-items:center;
+        justify-content:center;overflow:hidden"><img src="{LOGO}" style="width:82px;height:82px;object-fit:contain"></div>
+      <div style="height:2px;width:64px;background:{P.GOLD};margin:28px 0 20px"></div>
+      <div style="font-size:11px;font-weight:600;letter-spacing:3.4px;color:{P.GOLD};text-transform:uppercase">Project Elevate</div>
+      <h1 style="margin:12px 0 0;font-size:28px;font-weight:600;color:#fff;text-align:center">
+        {T("Sign in to continue", "سجّل الدخول للمتابعة")}</h1>
+      <p style="margin:12px 0 0;max-width:460px;text-align:center;font-size:13.5px;line-height:1.6;color:#8CA3C2">
+        {T("United Brothers Co. · access is scoped to your role. Use your company account.",
+           "الاخوة المتحدين للمقاولات · الصلاحيات محددة حسب دورك. استخدم حساب الشركة.")}</p>
+    </div>""", unsafe_allow_html=True)
+    lc1, lc2, lc3 = st.columns([2, 1, 2])
+    with lc2:
+        if st.button(T("🔑  Sign in", "🔑  تسجيل الدخول"), type="primary", width="stretch"):
+            st.login()
+    st.stop()
+
+
+# --------------------------------------------------------------------------- #
 #  SPLASH — the Run button MUST be the first st.button (smoke test)
 # --------------------------------------------------------------------------- #
 if not ss["ran"]:
@@ -181,7 +208,17 @@ audited = RES["boq"]["audited"]
 proj = store.project(ss["proj"])
 per_row = store.period_row(ss["proj"], ss["per"])
 LIVE = ss["proj"] == "p1" and ss["per"] == "jul"
-role = ss["role"]
+
+# Role: server-side from the authenticated identity when OIDC is configured;
+# otherwise the demo selector. Authenticated role cannot be self-selected.
+AUTHED = auth.enabled() and auth.is_logged_in()
+if AUTHED:
+    USER = auth.identity()
+    role = auth.role_for(USER["email"])
+    ss["role"] = role
+else:
+    USER = None
+    role = ss["role"]
 scope_portfolio = role == "exec"
 
 # --------------------------------------------------------------------------- #
@@ -220,12 +257,25 @@ with tb[1]:
     if selp != ss["per"]:
         ss["per"] = selp; st.rerun()
 with tb[2]:
-    role_keys = [r["k"] for r in P.ROLES]
-    selr = st.selectbox("role", role_keys, index=role_keys.index(role),
-                        format_func=lambda k: next(r[("en" if EN else "ar")] for r in P.ROLES if r["k"] == k),
-                        label_visibility="collapsed")
-    if selr != role:
-        ss["role"] = selr; st.rerun()
+    if AUTHED:
+        # Identity-derived role — fixed, not selectable (server-side scoping).
+        role_label = next(r[("en" if EN else "ar")] for r in P.ROLES if r["k"] == role)
+        st.markdown(
+            f"""<div title="{USER['email']}" style="display:flex;align-items:center;gap:8px;height:38px;
+              padding:0 12px;background:{P.CARD};border:1px solid {P.BORDER};border-radius:8px" dir="{DIR}">
+              <span style="width:8px;height:8px;border-radius:50%;background:{P.GREEN};flex:none"></span>
+              <span style="font-size:12px;font-weight:600;color:{P.NAVY};white-space:nowrap;overflow:hidden;
+                text-overflow:ellipsis">{USER['name']}</span>
+              <span style="font-size:10px;font-weight:600;color:{P.GOLD2};text-transform:uppercase;
+                letter-spacing:.5px;flex:none">· {role_label}</span></div>""",
+            unsafe_allow_html=True)
+    else:
+        role_keys = [r["k"] for r in P.ROLES]
+        selr = st.selectbox("role", role_keys, index=role_keys.index(role),
+                            format_func=lambda k: next(r[("en" if EN else "ar")] for r in P.ROLES if r["k"] == k),
+                            label_visibility="collapsed")
+        if selr != role:
+            ss["role"] = selr; st.rerun()
 with tb[3]:
     lang_sel = st.selectbox("lang", ["en", "ar"], index=0 if EN else 1,
                             format_func=lambda k: "English" if k == "en" else "العربية",
@@ -237,6 +287,8 @@ with tb[4]:
     if big != ss["big"]:
         ss["big"] = big; st.rerun()
 with tb[5]:
+    if AUTHED and st.button(T("Sign out", "خروج"), width="stretch"):
+        st.logout()
     if st.button(T("Re-run", "إعادة"), width="stretch"):
         run_engine.clear(); ss["ran"] = False; st.rerun()
 
